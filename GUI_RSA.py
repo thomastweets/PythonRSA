@@ -99,7 +99,7 @@ class RSA_GUI(wx.Frame):
         self.new.Show()
 
     def OnAbout(self, e):
-        dlg = wx.MessageDialog(self, "A small bla bla", "About bla")
+        dlg = wx.MessageDialog(self, "A small bla bla bla", "About bla")
         dlg.ShowModal()
         dlg.Destroy()
 
