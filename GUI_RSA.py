@@ -23,7 +23,8 @@ class RSA_GUI(wx.Frame):
         self.filemenu = wx.Menu()
         self.helpmenu = wx.Menu()
 
-        self.menuAbout = self.helpmenu.Append(wx.ID_ABOUT, "&About", "Learn more about RSA and how to use this program")
+        self.menuHelp = self.helpmenu.Append(wx.ID_ANY, "&Help", "Learn more about RSA and how to use this program")
+        self.menuAbout = self.helpmenu.Append(wx.ID_ABOUT, "&About", "Learn more about this program")
         self.menuClear = self.filemenu.Append(wx.ID_ANY,"&Clear","Clear data")
         self.filemenu.AppendSeparator()
         self.menuExit = self.filemenu.Append(wx.ID_EXIT, "&Exit", "Terminate the program")
@@ -33,6 +34,7 @@ class RSA_GUI(wx.Frame):
         self.SetMenuBar(self.menuBar)
 
         self.Bind(wx.EVT_MENU, self.OnAbout, self.menuAbout)
+        self.Bind(wx.EVT_MENU, self.OnHelp, self.menuHelp)
         self.Bind(wx.EVT_MENU, self.OnExit, self.menuExit)
         self.Bind(wx.EVT_MENU, self.OnClear, self.menuClear)
 
@@ -99,7 +101,16 @@ class RSA_GUI(wx.Frame):
         self.new.Show()
 
     def OnAbout(self, e):
-        dlg = wx.MessageDialog(self, "A small blubb blubb", "About bla")
+        dlg = wx.MessageDialog(self, "This is a program to perform a representational similarity analysis on functional magnetic resonance imaging data.\n\n"
+                                     "The analysis is following the principles described in the paper 'Representational Similarity Analysis - Connecting"
+                                     " the Branches of Systems Neuroscience' by Nikolaus Kriegeskorte, Marieke Mur and Peter Bandettini (2008). \n\nIt is the"
+                                     " result of a project work at Maastricht University by Pia Schroeder, Amelie Haugg and Julia Brehm under the supervision of Thomas Emmerling."
+                                     "\n\nFor correspondence please refer to https://github.com/thomastweets/PythonRSA", "About this program")
+        dlg.ShowModal()
+        dlg.Destroy()
+
+    def OnHelp(self, e):
+        dlg = wx.MessageDialog(self, "", "Help for this program")
         dlg.ShowModal()
         dlg.Destroy()
 
