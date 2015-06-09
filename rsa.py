@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-################# Representational Similarity Analysis ######################
+################# Representational Similarity Analysis #########################
 ################################################################################
+
+# Amelie Haugg
+# Julia Brehm
+# Pia Schröder
 
 import os
 from os.path import dirname, abspath
@@ -10,7 +14,6 @@ import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.stats import spearmanr
 import matplotlib.pyplot as plt
-#import networkx as nx
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import datetime
 import markdown
@@ -36,10 +39,6 @@ now = datetime.datetime.now()
 def import_data(paths):
     """ Import header and data matrix from VOM files specified in paths. Returns
     dictionary DATA containing data set names as keys."""
-
-    # Change path to current working directory
-    # path = dirname(abspath(__file__))
-    # os.chdir(path)
 
     DATA = dict()
 
@@ -77,8 +76,8 @@ def import_data(paths):
 
 
 def extract_data(DATA):
-    """ Get subject data from data matrices in DATA. One matrix per subject,
-    one column per condition. """
+    """ Get voxel data from data matrices in DATA. One matrix per area, rows = voxels,
+    columns = conditions. """
     # Extracts those columns in data that contain measurements (excluding voxel coordinates)
     data = []
     for i in range(1,len(DATA)+1):
@@ -89,7 +88,7 @@ def extract_data(DATA):
 def first_order_rdm(condition_data):
     """ Return Specified distance matrices (1 = Pearson correlation,
     2 = Euclidian distance, 3 = Absolute activation difference)  of data in
-    input arrays. One array per area/subject/method/...
+    input matrices. One matrix per area/subject/method/...
     Number of rows/columns = number of conditions = number of columns in each
     matrix in condition_data"""
 
@@ -97,7 +96,6 @@ def first_order_rdm(condition_data):
 
     # Iterate through matrices in condition_data and save one RDM per matrix
     for i in range(len(condition_data)):
-        #RDMs.append(cdist(condition_data[i], condition_data[i], 'correlation'))
 
         if dist_metric == 1:
             # Use correlation distance
@@ -106,20 +104,6 @@ def first_order_rdm(condition_data):
         elif dist_metric == 2:
             # Use Eucledian distance
             RDM = cdist(condition_data[i].T,condition_data[i].T,'euclidean')
-
-            # Or "by hand":
-            '''
-            no_cond = int(np.size(condition_data[i],axis=1))
-            RDM = np.zeros((no_cond,no_cond))
-
-            # Iterate through upper triangle of RDM
-            for m in range(no_cond):
-                for n in range(m+1,no_cond):
-                    RDM[m,n] = np.linalg.norm(condition_data[i][:,m]-condition_data[i][:,n])
-
-            # Mirror along diagonal
-            RDM = RDM + RDM.T
-            '''
 
         elif dist_metric == 3:
             # Use absolute activation difference
@@ -134,7 +118,6 @@ def first_order_rdm(condition_data):
 
 def get_pvalue(matrix1, matrix2):
     """ Randomize condition labels to test significance """
-
 
     order = range(0,len(matrix2))
     dist = np.zeros(no_relabelings)
@@ -154,13 +137,44 @@ def get_pvalue(matrix1, matrix2):
     # Determine p value of actual correlation from distribution
     p = float((dist >= corr).sum()) / len(dist)
 
-    # Mit dieser Methode brauch man mindestens 4 conditions, also 4!=24 mögliche
+    # Mit dieser Methode braucht man mindestens 4 conditions, also 4!=24 mögliche
     # Reihenfolgen um auf p < 0.05 zu kommen. Nicht gut!
 
     return p
 
+def bootstrap(data):
+    """ computes the variability of the obtained second-order RDM (i.e. distance
+    between areas, models, ...) for the same experiment with different stimuli
+    by bootstrapping 100 times from the condition set. """
 
-def second_order_rdm(RDMs):
+    all_RDMs = list()
+
+    # Iterate through 100 resamplings
+    for ind in range(100):
+        index = np.random.random_integers(0, high=len(data[0].T)-1, size=(1,len(data[0].T)))[0]
+        new_data = np.array(data)
+        # Reorder columns in data (conditions)
+        for elem in range(len(data)):
+            new_data[elem] = new_data[elem][:,index]
+        # Recompute first and second-order RDMs with new conditions
+        new_RDM1 = first_order_rdm(list(new_data))
+        new_RDM2 = second_order_rdm(new_RDM1, data, False)[0]
+        # Remove off-diagonal zeros to avoid artefactually small standard deviations
+        m_index = [new_RDM2 == 0]
+        ident = np.invert(np.identity(len(new_RDM2), dtype=bool))
+        m_index = m_index & ident
+        new_RDM2[m_index[0]] = np.nan
+
+        all_RDMs.append(new_RDM2)
+
+    all_RDMs = np.array(all_RDMs)
+
+    # Compute standard deviation along first dimension (across RDMs)
+    variability = np.nanstd(all_RDMs,0)
+
+    return variability
+
+def second_order_rdm(RDMs, data, firstcall):
     """ Returns representational dissimilarity matrix computed with Spearman rank correlations
     between variable number of equally sized input matrices. """
 
@@ -181,27 +195,37 @@ def second_order_rdm(RDMs):
     # Compute RDM (distance matrix) with correlation distance: 1 - correlation
     RDM = np.ones(c_matrix.shape) - c_matrix
 
+    p_values = []
+    variability = []
+
+    if firstcall:
+
+        if bar_plot and len(RDMs)>2:
+
+            # Determine variability of distance estimates for different stimuli
+            # Bootstrap from condition set (100 times, with replacement)
+            variability = bootstrap(data)
+
+        if pvalues or bar_plot:
+            # Determine significance of second order RDM
+            p_values = np.zeros(RDM.shape)
+
+            # Iterate through pvalue matrix and fill in p-values but only for upper
+            # triangle to improve performance
+            for i in range(0,len(p_values)):
+                for j in range(i,len(p_values)):
+                    p_values[i,j] = get_pvalue(RDMs[i], RDMs[j])
+
+            # mirror matrix to obtain all p-values
+            p_values = p_values + np.triu(p_values,1).T
 
 
-    if pvalues or bar_plot:
-        # Determine significance of second order RDM
-        p_values = np.zeros(RDM.shape)
-
-        # Iterate through pvalue matrix and fill in p-values but only for upper
-        # triangle to improve performance
-        for i in range(0,len(p_values)):
-            for j in range(i,len(p_values)):
-                p_values[i,j] = get_pvalue(RDMs[i], RDMs[j])
-
-        # mirror matrix to obtain all p-values
-        p_values = p_values + np.triu(p_values,1).T
-    else:
-        p_values = []
-
-    return [RDM, p_values]
+    return [RDM, p_values, variability]
 
 
 def plot_RDM(RDMs, labels, names, fig):
+    """ Create RDM plot. Creates one first-order plot for each area if fig=1
+    and a single second-order plot if fig=2."""
 
     # Determine optimal arrangement for plots
     rows = int(np.sqrt(len(RDMs)))
@@ -229,8 +253,6 @@ def plot_RDM(RDMs, labels, names, fig):
 
         for label in ax.get_xticklabels():
             label.set_fontsize(6)
-        #for label in ax.get_xticklabels()
-        #    label.set_fontsize(8)
 
         ax.xaxis.tick_top()
         ax.set_title(names[index], y = 1.08)
@@ -238,7 +260,6 @@ def plot_RDM(RDMs, labels, names, fig):
         cax = divider.append_axes("right", size="5%", pad=0.05)
         dist_max = np.max(RDMs[index])
         cbar = plt.colorbar(im, ticks=[0, dist_max], cax=cax)
-        #cbar.ax.set_ylabel('Dissimilarity')
         cbar.ax.set_yticklabels(['0', str(np.around(dist_max,decimals=2))])
 
     cbar.ax.set_ylabel('Dissimilarity')
@@ -260,28 +281,28 @@ def plot_RDM(RDMs, labels, names, fig):
 
     return figure_name
 
-    #, dpi=None, facecolor='w', edgecolor='w',
-    #    orientation='portrait', papertype=None, format=None,
-    #    transparent=False, bbox_inches=None, pad_inches=0.1,
-    #    frameon=None)
 
-    #mng = plt.get_current_fig_manager()
-    #mng.window.showMaximized()
-
-
-def plot_bars(RDM, pvalues, names):
+def plot_bars(RDM, pvalues, variability, names):
+    """ Creates bar plot depicticting the distances between different areas.
+    Bars are sorted by significance, errorbars indicate the standard error of
+    the distnace estimate (estimated as the standard deviation of 100 distance
+    estimates obtained from bootstrapping of the condition labels)"""
 
     length = len(RDM)
-    max = np.max(RDM)
 
     f = plt.figure(3, figsize=(14,6))
 
     for index in np.arange(length):
 
+        maxim = np.max(RDM[index])
+
         xticks = np.arange(length-1)+1
 
         d_values = RDM[index,:]
         plot_dvalues = d_values[d_values != 0]
+
+        v_values = variability[index,:]
+        plot_vvalues = v_values[d_values != 0]
 
         p_values = pvalues[index,:]
         plot_pvalues = np.around(p_values[d_values != 0], decimals=4)
@@ -294,13 +315,14 @@ def plot_bars(RDM, pvalues, names):
         ax.set_ylabel('Correlation distance (1-Spearman rank correlation)')
         ax.set_xlabel('P-values')
 
-        ax.bar(xticks, plot_dvalues[sort], 0.5, align = 'center')
-        plt.axis([0.5, length-0.5, 0, max+max*0.1])
+        ax.bar(xticks, plot_dvalues[sort], 0.5, yerr = plot_vvalues[sort], error_kw=dict(ecolor='black', lw=2), align = 'center')
+        scale_y = max(plot_dvalues + plot_vvalues)+maxim*0.1
+        plt.axis([0.5, length-0.5, 0, scale_y])
 
         ax.set_title(names[index])
 
         for ind in np.arange(length-1):
-            ax.text(xticks[ind], max*0.1, plot_names[sort][ind],
+            ax.text(xticks[ind], scale_y*0.1, plot_names[sort][ind],
                  rotation='vertical', horizontalalignment='center',
                  backgroundcolor='w', color='k', visible=True)
 
@@ -312,15 +334,10 @@ def plot_bars(RDM, pvalues, names):
 
     return figure_name
 
-    #mng = plt.get_current_fig_manager()
-    #mng.window.showMaximized()
-
-
-#def MDS(RDM, labels)
-#    G = nx.from_numpy_matrix(RDM)
-#    nx.draw(G)
 
 def generate_output(*args):
+    """ Generates text file including all output and converts it into html
+    (markdown) file """
 
     if len(args) > 3:
         [withinRDMs, betweenRDM, names, labels] = args
@@ -339,9 +356,6 @@ def generate_output(*args):
         fid.write("#Representational similarity analysis\n\n")
         fid.write("###Areas: "+str(', '.join(names))+"\n")
         fid.write("###Conditions: "+str(', '.join(labels))+"\n\n\n\n")
-
-        # Insert output
-        #if (output_first and correlations1) or (output_second and (correlations2 or pvalues)):
 
         # first-order RDMs
         if output_first:
@@ -393,8 +407,9 @@ def generate_output(*args):
                 fid.write("\n")
 
             # Bar plot
-            if bar_plot:
-                figure_name = plot_bars(betweenRDM[0], betweenRDM[1], names)
+            if bar_plot and len(betweenRDM[0])>2:
+
+                figure_name = plot_bars(betweenRDM[0], betweenRDM[1], betweenRDM[2], names)
                 fid.write("\n")
                 fid.write("![Figure3](%s)" % figure_name)
                 fid.write("\n")
@@ -403,9 +418,8 @@ def generate_output(*args):
 
         html = markdown.markdownFromFile(filename, output_file, extensions=['markdown.extensions.nl2br'])
 
-    webbrowser.open(output, new=2)
-
     os.remove(filename)
+    webbrowser.open(output, new=2)
 
 
 def RSA(paths, files, labels):
@@ -419,7 +433,7 @@ def RSA(paths, files, labels):
     names = [file[0:-4] for file in files]
 
     if output_second:
-        betweenRDM = second_order_rdm(withinRDMs)
+        betweenRDM = second_order_rdm(withinRDMs, data, True)
 
     if output_second:
         generate_output(withinRDMs, betweenRDM, names, labels)
