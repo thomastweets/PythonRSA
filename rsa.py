@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 #import networkx as nx
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import datetime
+import markdown
+import webbrowser
 
 # Global variables and their default values
 
@@ -28,10 +30,11 @@ output_first = True
 output_second = False
 scale_to_max = False
 
+now = datetime.datetime.now()
 
 
 def import_data(paths):
-    """ Import header and data matrix from VOM files specified in *args. Returns
+    """ Import header and data matrix from VOM files specified in paths. Returns
     dictionary DATA containing data set names as keys."""
 
     # Change path to current working directory
@@ -209,7 +212,10 @@ def plot_RDM(RDMs, labels, names, fig):
     # Use maximum value in RDMs for scaling if desired
     dist_max = np.max(np.array(RDMs))
 
-    f = plt.figure(fig)
+    if fig == 1:
+        f = plt.figure(fig, figsize=(18, 8))
+    if fig == 2:
+        f = plt.figure(fig, figsize=(6, 6))
 
     # New: add_subplot instead of subplots to control figure instance
     for index in np.arange(len(RDMs)):
@@ -221,19 +227,26 @@ def plot_RDM(RDMs, labels, names, fig):
         else:
             im = ax.imshow(RDMs[index], interpolation = 'none', cmap = 'jet')
 
+        for label in ax.get_xticklabels():
+            label.set_fontsize(6)
+        #for label in ax.get_xticklabels()
+        #    label.set_fontsize(8)
+
         ax.xaxis.tick_top()
         ax.set_title(names[index], y = 1.08)
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
         dist_max = np.max(RDMs[index])
         cbar = plt.colorbar(im, ticks=[0, dist_max], cax=cax)
-        cbar.ax.set_ylabel('Dissimilarity')
+        #cbar.ax.set_ylabel('Dissimilarity')
         cbar.ax.set_yticklabels(['0', str(np.around(dist_max,decimals=2))])
+
+    cbar.ax.set_ylabel('Dissimilarity')
 
     f.subplots_adjust(hspace=0.1, wspace=0.3)
 
 
-    if fig == 0:
+    if fig == 1:
         if dist_metric == 1:
             f.suptitle('First order distance metric: Correlation distance', y=0.9, fontsize=18)
         elif dist_metric == 2:
@@ -241,8 +254,19 @@ def plot_RDM(RDMs, labels, names, fig):
         elif dist_metric == 3:
             f.suptitle('First order distance metric: Absolute activation difference', y=0.9, fontsize=18)
 
-    mng = plt.get_current_fig_manager()
-    mng.window.showMaximized()
+    figure_name = "Figure%d_%d-%d-%d-%d-%d-%d.png" % (fig, now.day, now.month, now.year, now.hour,
+               now.minute, now.second)
+    plt.savefig(figure_name, transparent=True)
+
+    return figure_name
+
+    #, dpi=None, facecolor='w', edgecolor='w',
+    #    orientation='portrait', papertype=None, format=None,
+    #    transparent=False, bbox_inches=None, pad_inches=0.1,
+    #    frameon=None)
+
+    #mng = plt.get_current_fig_manager()
+    #mng.window.showMaximized()
 
 
 def plot_bars(RDM, pvalues, names):
@@ -250,7 +274,7 @@ def plot_bars(RDM, pvalues, names):
     length = len(RDM)
     max = np.max(RDM)
 
-    f = plt.figure(3)
+    f = plt.figure(3, figsize=(14,6))
 
     for index in np.arange(length):
 
@@ -260,7 +284,7 @@ def plot_bars(RDM, pvalues, names):
         plot_dvalues = d_values[d_values != 0]
 
         p_values = pvalues[index,:]
-        plot_pvalues = p_values[d_values != 0]
+        plot_pvalues = np.around(p_values[d_values != 0], decimals=4)
 
         plot_names = np.array(names)[d_values != 0]
 
@@ -268,6 +292,7 @@ def plot_bars(RDM, pvalues, names):
 
         ax = f.add_subplot(1,length, index+1, xticks = xticks, xticklabels = plot_pvalues[sort])
         ax.set_ylabel('Correlation distance (1-Spearman rank correlation)')
+        ax.set_xlabel('P-values')
 
         ax.bar(xticks, plot_dvalues[sort], 0.5, align = 'center')
         plt.axis([0.5, length-0.5, 0, max+max*0.1])
@@ -281,13 +306,106 @@ def plot_bars(RDM, pvalues, names):
 
 
     f.subplots_adjust(hspace=0.1, wspace=0.3)
+    figure_name = "Figure3_%d-%d-%d-%d-%d-%d.png" % (now.day, now.month, now.year, now.hour,
+               now.minute, now.second)
+    plt.savefig(figure_name, transparent=True)
 
-    mng = plt.get_current_fig_manager()
-    mng.window.showMaximized()
+    return figure_name
+
+    #mng = plt.get_current_fig_manager()
+    #mng.window.showMaximized()
+
 
 #def MDS(RDM, labels)
 #    G = nx.from_numpy_matrix(RDM)
 #    nx.draw(G)
+
+def generate_output(*args):
+
+    if len(args) > 3:
+        [withinRDMs, betweenRDM, names, labels] = args
+    else:
+        [withinRDMs, names, labels] = args
+
+    # Produce text file
+    filename = "RSA_output_%d-%d-%d-%d-%d-%d.txt" % (now.day, now.month, now.year, now.hour,
+               now.minute, now.second)
+
+    output = "RSA_output_%d-%d-%d-%d-%d-%d.html" % (now.day, now.month, now.year, now.hour,
+               now.minute, now.second)
+
+    with open(filename, 'w') as fid:
+
+        fid.write("#Representational similarity analysis\n\n")
+        fid.write("###Areas: "+str(', '.join(names))+"\n")
+        fid.write("###Conditions: "+str(', '.join(labels))+"\n\n\n\n")
+
+        # Insert output
+        #if (output_first and correlations1) or (output_second and (correlations2 or pvalues)):
+
+        # first-order RDMs
+        if output_first:
+
+            fid.write("##First-order analysis\n\n")
+
+            # Numerical correlations
+            if correlations1:
+
+                distances = {1:'Correlation distance', 2:'Euclidean distance', 3:'Absolute activation difference'}
+
+                fid.write("###Dissimilarity between conditions: "+distances[dist_metric]+"\n\n")
+                for ind in np.arange(len(withinRDMs)):
+                    fid.write("\n###"+names[ind]+"\n")
+                    np.savetxt(fid, withinRDMs[ind], fmt='%.4f')# , header="\n"+names[ind]+"\n")
+                    fid.write("\n")
+
+            # RDM Plot
+            if matrix_plot1:
+                figure_name = plot_RDM(withinRDMs, labels, names, 1)
+                fid.write("![Figure1](%s)" % figure_name)
+
+        # second-order RDM
+        if output_second:
+
+            fid.write("\n")
+            fid.write("##Second-order analysis\n\n")
+
+            # Numerical correlations
+            if correlations2:
+
+                fid.write("###Dissimilarity between areas: 1-Spearman rank correlation\n\n")
+                np.savetxt(fid, betweenRDM[0], fmt='%.4f')
+                fid.write("\n\n")
+
+            # P-values
+            if pvalues:
+
+                fid.write("###Statistical significance of Dissimilarity between areas\n")
+                fid.write("P-values are obtained by random relabeling of conditions.\nNo. of relabelings = %d \n\n" % (no_relabelings))
+                np.savetxt(fid, betweenRDM[1], fmt='%.4f')
+                fid.write("\n\n")
+
+            # RDM plot
+            if matrix_plot2:
+                figure_name = plot_RDM([betweenRDM[0]], names, ['Second order RDM'], 2)
+                fid.write("\n")
+                fid.write("![Figure2](%s)" % figure_name)
+                fid.write("\n")
+
+            # Bar plot
+            if bar_plot:
+                figure_name = plot_bars(betweenRDM[0], betweenRDM[1], names)
+                fid.write("\n")
+                fid.write("![Figure3](%s)" % figure_name)
+                fid.write("\n")
+
+    with open(output, 'w') as output_file:
+
+        html = markdown.markdownFromFile(filename, output_file, extensions=['markdown.extensions.nl2br'])
+
+    webbrowser.open(output, new=2)
+
+    os.remove(filename)
 
 
 def RSA(paths, files, labels):
@@ -298,56 +416,12 @@ def RSA(paths, files, labels):
     data = extract_data(data)
     withinRDMs = first_order_rdm(data)
 
+    names = [file[0:-4] for file in files]
+
     if output_second:
         betweenRDM = second_order_rdm(withinRDMs)
 
-    names = [file[0:-4] for file in files]
-
-    # Numerical output
-    if (output_first and correlations1) or (output_second and (correlations2 or pvalues)):
-
-        now = datetime.datetime.now()
-        filename = "RSA_output%d-%d-%d-%d-%d-%d.txt" % (now.day, now.month, now.year, now.hour,
-                   now.minute, now.second)
-
-        fid = open(filename, 'w')
-
-        fid.write("Representational similarity analysis\n\n")
-        fid.write("Areas: "+str(names)+"\n")
-        fid.write("Conditions: "+str(labels)+"\n\n\n")
-
-
-        if output_first and correlations1:
-
-            distances = {1:'Correlation distance', 2:'Euclidean distance', 3:'Absolute activation difference'}
-
-            fid.write("Dissimilarity between conditions: "+distances[dist_metric]+"\n\n")
-            for ind in np.arange(len(withinRDMs)):
-                np.savetxt(fid, withinRDMs[ind], fmt='%.4f' , header="\n"+names[ind]+"\n")
-                fid.write("\n")
-            fid.write("\n")
-
-        if output_second and correlations2:
-
-            fid.write("Dissimilarity between areas: 1-Spearman rank correlation\n\n")
-            np.savetxt(fid, betweenRDM[0], fmt='%.4f')
-            fid.write("\n\n")
-
-        if output_second and pvalues:
-
-            fid.write("Statistical significance of Dissimilarity between areas.\nP-values are obtained by random relabeling of conditions.\n\n")
-            np.savetxt(fid, betweenRDM[1], fmt='%.4f')
-            fid.write("\n\n")
-
-
-    # Plots
-    if matrix_plot1:
-        plot_RDM(withinRDMs, labels, names, 1)
-    if output_second and matrix_plot2:
-        plot_RDM([betweenRDM[0]], names, ['Second order RDM'], 2)
-    if output_second and bar_plot:
-        plot_bars(betweenRDM[0], betweenRDM[1], names)
-    if matrix_plot1 or matrix_plot2 or bar_plot:
-        #mng = plt.get_current_fig_manager()
-        #mng.window.showMaximized()
-        plt.show()
+    if output_second:
+        generate_output(withinRDMs, betweenRDM, names, labels)
+    else:
+        generate_output(withinRDMs, names, labels)
