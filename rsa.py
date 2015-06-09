@@ -55,12 +55,6 @@ def import_data(paths):
                 string_list = line.split()
                 item_list = [int(i) if i.isdigit() else i for i in string_list]
 
-                try:
-                    if index == 1:
-                        item_list(0) == "FileVersion"
-                except IOError:
-                    print('Those are no valid vom files')
-
                 # For non empty list save first element as key and rest as value in
                 # header dictionary
                 if item_list:
