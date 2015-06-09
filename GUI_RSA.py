@@ -128,6 +128,8 @@ class RSA_GUI(wx.Frame):
     def OnFiles(self, event):
         dialog = wx.FileDialog(self, "Choose files:", os.getcwd(), " ","*.vom", wx.FD_OPEN|wx.FD_MULTIPLE)
 
+        self.files = []
+
         if dialog.ShowModal() == wx.ID_OK:
             self.paths = dialog.GetPaths()
             # myfiles contains all the file names
