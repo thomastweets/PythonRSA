@@ -9,9 +9,7 @@ It is the result of a project work at Maastricht University by Pia Schroeder, Am
 3. Condition List
 4. Options
  1. First Order Analysis
-  * Settings
  2. Second Order Analysis
-  * Settings
 
 ## Representational Similarity Analysis
 
