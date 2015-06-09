@@ -132,10 +132,17 @@ class RSA_GUI(wx.Frame):
             for path in self.paths:
                 self.files.append(os.path.basename(path).encode("utf-8"))
 
+        if len(self.files) > 1:
+            global files_number
+            files_number = 1
+        else:
+            files_number = 0
+
         if self.files:
             self.file_text.ChangeValue(str(', '.join(self.files)))
             self.go_btn.Enable()
         dialog.Destroy()
+
 
     def conditions(self, event):
         self.textinput = wx.TextEntryDialog(self, "Type in condition names separated by a white space", "Condition labels")
@@ -248,6 +255,12 @@ class OptionWindow(wx.Frame):
         self.vbox.Add(self.RDM2_box, flag = wx.LEFT, border = 10)
 
         self.vbox.Add((-1,10))
+
+        # only checkable if you have chosen enough files
+
+        self.RDM2_cb.Disable()
+        if files_number == 1:
+            self.RDM2_cb.Enable()
 
         # Check box: Matrix plots
         self.mplot2_box = wx.BoxSizer(wx.HORIZONTAL)
