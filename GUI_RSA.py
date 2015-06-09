@@ -5,6 +5,7 @@
 import wx
 import rsa
 import os
+import webbrowser
 
 class RSA_GUI(wx.Frame):
     def __init__(self, parent, title):
@@ -110,9 +111,10 @@ class RSA_GUI(wx.Frame):
         dlg.Destroy()
 
     def OnHelp(self, e):
-        dlg = wx.MessageDialog(self, "", "Help for this program")
-        dlg.ShowModal()
-        dlg.Destroy()
+        webbrowser.open("https://github.com/thomastweets/PythonRSA/blob/master/README.md")
+        #dlg = wx.MessageDialog(self, "", "Help for this program")
+        #dlg.ShowModal()
+        #dlg.Destroy()
 
     def OnExit(self, e):
         self.Close(True)
