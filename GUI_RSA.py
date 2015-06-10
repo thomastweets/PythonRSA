@@ -124,6 +124,17 @@ class RSA_GUI(wx.Frame):
         self.labels = []
         self.file_text.ChangeValue(str(''))
         self.label_text.ChangeValue(str(''))
+        rsa.matrix_plot1 = True
+        rsa.matrix_plot2 = False
+        rsa.bar_plot = False
+        rsa.correlations1 = False
+        rsa.correlations2 = False
+        rsa.pvalues = False
+        rsa.no_relabelings = 10000
+        rsa.dist_metric = 1
+        rsa.output_first = True
+        rsa.output_second = False
+        rsa.scale_to_max = False
 
     def OnFiles(self, event):
         dialog = wx.FileDialog(self, "Choose files:", os.getcwd(), " ","*.vom", wx.FD_OPEN|wx.FD_MULTIPLE)
