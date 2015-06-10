@@ -24,7 +24,7 @@ Running this software requires [Python 2.7](https://www.python.org/download/rele
 * [Numpy](http://www.numpy.org/)
 * [Scipy](http://www.scipy.org/)
 * [Matplotlib](http://matplotlib.org/)
-* [Markdown](https://pypi.python.org/pypi/Markdown).
+* [Markdown](https://pypi.python.org/pypi/Markdown)
 
 ## File Format
 
