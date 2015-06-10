@@ -201,7 +201,7 @@ def second_order_rdm(RDMs, data, firstcall):
 
     if firstcall:
 
-        if bar_plot and len(RDMs)>2:
+        if bar_plot:
 
             # Determine variability of distance estimates for different stimuli
             # Bootstrap from condition set (100 times, with replacement)
@@ -408,7 +408,7 @@ def generate_output(*args):
                 fid.write("\n")
 
             # Bar plot
-            if bar_plot and len(betweenRDM[0])>2:
+            if bar_plot:
 
                 figure_name = plot_bars(betweenRDM[0], betweenRDM[1], betweenRDM[2], names)
                 fid.write("\n")

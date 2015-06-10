@@ -7,6 +7,8 @@ import rsa
 import os
 import webbrowser
 
+files_number = 0
+
 class RSA_GUI(wx.Frame):
     def __init__(self, parent, title):
         super(RSA_GUI,self).__init__(parent, style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER, title = title, size = (400,275))
@@ -135,6 +137,10 @@ class RSA_GUI(wx.Frame):
         rsa.output_first = True
         rsa.output_second = False
         rsa.scale_to_max = False
+        global files_number
+        files_number = 0
+        self.go_btn.Disable()
+
 
     def OnFiles(self, event):
         dialog = wx.FileDialog(self, "Choose files:", os.getcwd(), " ","*.vom", wx.FD_OPEN|wx.FD_MULTIPLE)
@@ -147,8 +153,8 @@ class RSA_GUI(wx.Frame):
             for path in self.paths:
                 self.files.append(os.path.basename(path).encode("utf-8"))
 
+        global files_number
         if len(self.files) > 1:
-            global files_number
             files_number = 1
         else:
             files_number = 0
