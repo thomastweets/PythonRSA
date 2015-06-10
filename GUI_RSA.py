@@ -367,7 +367,7 @@ class OptionWindow(wx.Frame):
 
 
     def OnSelectRDM2(self,e):
-        if self.RDM2_cb.GetValue():
+        if self.RDM2_cb.GetValue() and files_number == 1:
             self.bplot_cb.Enable()
             self.mplot2_cb.Enable()
             self.p_cb.Enable()
