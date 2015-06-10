@@ -2,7 +2,7 @@
 
 RSA Python performs representational similarity analysis (RSA) on functional magnetic resonance imaging (fMRI) data.  
 The analysis follows the principles described in ['Representational Similarity Analysis - Connecting the Branches of Systems Neuroscience'](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2605405/) by Nikolaus Kriegeskorte, Marieke Mur and Peter Bandettini (2008).  
-It is the result of a project work at the Department of Cognitive Neuroscience, Maastricht University by Pia Schroeder, Amelie Haugg and Julia Brehm under the supervision of Thomas Emmerling and Rainer Goebel.
+It is the result of a project work at the Department of Cognitive Neuroscience, Maastricht University by Pia Schroeder, Amelie Haugg and Julia Brehm under the supervision of Thomas Emmerling.
 
 1. Representational Similarity Analysis
 2. Software Requirements
