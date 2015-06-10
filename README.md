@@ -21,6 +21,7 @@ RSA uses activity patterns in fMRI data to compare representations in different 
 
 Running this software requires [Python 2.7](https://www.python.org/download/releases/2.7/) including the following packages:
 
+* [wxPython](http://www.wxpython.org/)
 * [Numpy](http://www.numpy.org/)
 * [Scipy](http://www.scipy.org/)
 * [Matplotlib](http://matplotlib.org/)
